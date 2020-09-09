@@ -168,6 +168,20 @@ public abstract class MessageHandler {
         return def;
     }
 
+    protected boolean getBooleanDeviceConfig(String key, boolean def) {
+        Object o = feature.getDevice().getDeviceConfigMap().get(key);
+        if (o != null) {
+            if (o instanceof Boolean) {
+                return (Boolean) o;
+            } else {
+                logger.warn("{} {}: The value for the '{}' key is not boolean in the device configuration parameter.",
+                        nm(), feature.getDevice().getAddress(), key);
+            }
+        }
+
+        return def;
+    }
+
     /**
      * Test if message refers to the button configured for given feature
      *
@@ -768,6 +782,49 @@ public abstract class MessageHandler {
     }
 
     @NonNullByDefault
+    public static class MotionSensor2AlternateHeartbeatHandler extends MessageHandler {
+        MotionSensor2AlternateHeartbeatHandler(DeviceFeature p) {
+            super(p);
+        }
+
+        @Override
+        public void handleMessage(int group, byte cmd1, Msg msg, DeviceFeature f) {
+            InsteonDevice dev = f.getDevice();
+            try {
+                // group 0x0B (11) - alternate heartbeat group
+                InsteonAddress toAddr = msg.getAddr("toAddress");
+                int batteryLevel = toAddr.getHighByte() & 0xff;
+                int lightLevel = toAddr.getMiddleByte() & 0xff;
+                int temperatureLevel = msg.getByte("command2") & 0xff;
+
+                logger.debug("{}: {} got light level: {}, battery level: {}, temperature level: {}", nm(),
+                        dev.getAddress(), lightLevel, batteryLevel, temperatureLevel);
+                feature.publish(new DecimalType(lightLevel), StateChangeType.CHANGED, InsteonDeviceHandler.FIELD,
+                        InsteonDeviceHandler.FIELD_LIGHT_LEVEL);
+                feature.publish(new DecimalType(batteryLevel), StateChangeType.CHANGED, InsteonDeviceHandler.FIELD,
+                        InsteonDeviceHandler.FIELD_BATTERY_LEVEL);
+                feature.publish(new DecimalType(temperatureLevel), StateChangeType.CHANGED, InsteonDeviceHandler.FIELD,
+                        InsteonDeviceHandler.FIELD_TEMPERATURE_LEVEL);
+
+                // per 2844-222 dev doc: working battery level range is 0xd2 - 0x70
+                int batteryPercentage;
+                if (batteryLevel >= 0xd2) {
+                    batteryPercentage = 100;
+                } else if (batteryLevel <= 0x70) {
+                    batteryPercentage = 0;
+                } else {
+                    batteryPercentage = (batteryLevel - 0x70) * 100 / (0xd2 - 0x70);
+                }
+                logger.debug("{}: {} battery percentage: {}", nm(), dev.getAddress(), batteryPercentage);
+                feature.publish(new QuantityType<>(batteryPercentage, SmartHomeUnits.PERCENT), StateChangeType.CHANGED,
+                        InsteonDeviceHandler.FIELD, InsteonDeviceHandler.FIELD_BATTERY_PERCENTAGE);
+            } catch (FieldException e) {
+                logger.warn("error parsing {}: ", msg, e);
+            }
+        }
+    }
+
+    @NonNullByDefault
     public static class HiddenDoorSensorDataReplyHandler extends MessageHandler {
         HiddenDoorSensorDataReplyHandler(DeviceFeature p) {
             super(p);
@@ -974,7 +1031,9 @@ public abstract class MessageHandler {
         public void handleMessage(int group, byte cmd1, Msg msg, DeviceFeature f) {
             feature.publish(OpenClosedType.CLOSED, StateChangeType.ALWAYS);
             if (f.getDevice().hasProductKey(InsteonDeviceHandler.MOTION_SENSOR_II_PRODUCT_KEY)) {
-                sendExtendedQuery(f, (byte) 0x2e, (byte) 03);
+                if (!getBooleanDeviceConfig("heartbeatOnly", false)) {
+                    sendExtendedQuery(f, (byte) 0x2e, (byte) 03);
+                }
             } else {
                 sendExtendedQuery(f, (byte) 0x2e, (byte) 00);
             }
@@ -991,7 +1050,9 @@ public abstract class MessageHandler {
         public void handleMessage(int group, byte cmd1, Msg msg, DeviceFeature f) {
             feature.publish(OpenClosedType.OPEN, StateChangeType.ALWAYS);
             if (f.getDevice().hasProductKey(InsteonDeviceHandler.MOTION_SENSOR_II_PRODUCT_KEY)) {
-                sendExtendedQuery(f, (byte) 0x2e, (byte) 03);
+                if (!getBooleanDeviceConfig("heartbeatOnly", false)) {
+                    sendExtendedQuery(f, (byte) 0x2e, (byte) 03);
+                }
             } else {
                 sendExtendedQuery(f, (byte) 0x2e, (byte) 00);
             }

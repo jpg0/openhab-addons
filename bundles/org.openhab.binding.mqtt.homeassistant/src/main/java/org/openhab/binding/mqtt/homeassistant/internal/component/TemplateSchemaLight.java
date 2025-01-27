@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2010-2024 Contributors to the openHAB project
+/*
+ * Copyright (c) 2010-2025 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -35,6 +35,7 @@ import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.Units;
 import org.openhab.core.thing.ChannelUID;
+import org.openhab.core.thing.type.AutoUpdatePolicy;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.State;
 import org.openhab.core.types.UnDefType;
@@ -69,43 +70,47 @@ public class TemplateSchemaLight extends AbstractRawSchemaLight {
         public static final String EFFECT = "effect";
     }
 
-    public TemplateSchemaLight(ComponentFactory.ComponentConfiguration builder, boolean newStyleChannels) {
-        super(builder, newStyleChannels);
+    public TemplateSchemaLight(ComponentFactory.ComponentConfiguration builder) {
+        super(builder);
         transformation = new HomeAssistantChannelTransformation(getJinjava(), this, "");
     }
 
     @Override
     protected void buildChannels() {
+        AutoUpdatePolicy autoUpdatePolicy = optimistic ? AutoUpdatePolicy.RECOMMEND : null;
         if (channelConfiguration.commandOnTemplate == null || channelConfiguration.commandOffTemplate == null) {
             throw new UnsupportedComponentException("Template schema light component '" + getHaID()
                     + "' does not define command_on_template or command_off_template!");
         }
 
         onOffValue = new OnOffValue("on", "off");
-        brightnessValue = new PercentageValue(null, new BigDecimal(255), null, null, null);
+        brightnessValue = new PercentageValue(null, new BigDecimal(255), null, null, null, FORMAT_INTEGER);
 
         if (channelConfiguration.redTemplate != null && channelConfiguration.greenTemplate != null
                 && channelConfiguration.blueTemplate != null) {
             colorChannel = buildChannel(COLOR_CHANNEL_ID, ComponentChannelType.COLOR, colorValue, "Color", this)
-                    .commandTopic(DUMMY_TOPIC, true, 1).commandFilter(command -> handleCommand(command)).build();
+                    .commandTopic(DUMMY_TOPIC, true, 1).commandFilter(command -> handleCommand(command))
+                    .withAutoUpdatePolicy(autoUpdatePolicy).build();
         } else if (channelConfiguration.brightnessTemplate != null) {
             brightnessChannel = buildChannel(BRIGHTNESS_CHANNEL_ID, ComponentChannelType.DIMMER, brightnessValue,
                     "Brightness", this).commandTopic(DUMMY_TOPIC, true, 1)
-                    .commandFilter(command -> handleCommand(command)).build();
+                    .commandFilter(command -> handleCommand(command)).withAutoUpdatePolicy(autoUpdatePolicy).build();
         } else {
-            onOffChannel = buildChannel(ON_OFF_CHANNEL_ID, ComponentChannelType.SWITCH, onOffValue, "On/Off State",
-                    this).commandTopic(DUMMY_TOPIC, true, 1).commandFilter(command -> handleCommand(command)).build();
+            onOffChannel = buildChannel(SWITCH_CHANNEL_ID, ComponentChannelType.SWITCH, onOffValue, "On/Off State",
+                    this).commandTopic(DUMMY_TOPIC, true, 1).commandFilter(command -> handleCommand(command))
+                    .withAutoUpdatePolicy(autoUpdatePolicy).build();
         }
 
         if (channelConfiguration.colorTempTemplate != null) {
             buildChannel(COLOR_TEMP_CHANNEL_ID, ComponentChannelType.NUMBER, colorTempValue, "Color Temperature", this)
                     .commandTopic(DUMMY_TOPIC, true, 1).commandFilter(command -> handleColorTempCommand(command))
-                    .build();
+                    .withAutoUpdatePolicy(autoUpdatePolicy).build();
         }
         TextValue localEffectValue = effectValue;
         if (channelConfiguration.effectTemplate != null && localEffectValue != null) {
             buildChannel(EFFECT_CHANNEL_ID, ComponentChannelType.STRING, localEffectValue, "Effect", this)
-                    .commandTopic(DUMMY_TOPIC, true, 1).commandFilter(command -> handleEffectCommand(command)).build();
+                    .commandTopic(DUMMY_TOPIC, true, 1).commandFilter(command -> handleEffectCommand(command))
+                    .withAutoUpdatePolicy(autoUpdatePolicy).build();
         }
     }
 

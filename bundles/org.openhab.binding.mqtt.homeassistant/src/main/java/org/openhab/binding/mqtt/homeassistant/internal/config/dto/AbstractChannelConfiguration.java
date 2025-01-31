@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2010-2024 Contributors to the openHAB project
+/*
+ * Copyright (c) 2010-2025 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -64,6 +64,11 @@ public abstract class AbstractChannelConfiguration {
      * availability_topic
      */
     protected @Nullable List<Availability> availability;
+
+    @SerializedName("json_attributes_template")
+    protected @Nullable String jsonAttributesTemplate;
+    @SerializedName("json_attributes_topic")
+    protected @Nullable String jsonAttributesTopic;
 
     @SerializedName(value = "~")
     protected String parentTopic = "";
@@ -195,6 +200,16 @@ public abstract class AbstractChannelConfiguration {
 
     public AvailabilityMode getAvailabilityMode() {
         return availabilityMode;
+    }
+
+    @Nullable
+    public String getJsonAttributesTemplate() {
+        return jsonAttributesTemplate;
+    }
+
+    @Nullable
+    public String getJsonAttributesTopic() {
+        return jsonAttributesTopic;
     }
 
     /**

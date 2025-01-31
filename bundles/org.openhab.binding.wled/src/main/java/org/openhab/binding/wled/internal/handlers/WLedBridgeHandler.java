@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2010-2024 Contributors to the openHAB project
+/*
+ * Copyright (c) 2010-2025 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -184,7 +184,7 @@ public class WLedBridgeHandler extends BaseBridgeHandler {
                     localApi.setUdpSend(OnOffType.ON.equals(command));
                     break;
                 case CHANNEL_SYNC_RECEIVE:
-                    localApi.setUdpRecieve(OnOffType.ON.equals(command));
+                    localApi.setUdpReceive(OnOffType.ON.equals(command));
                     break;
                 case CHANNEL_LIVE_OVERRIDE:
                     localApi.setLiveOverride(command.toString());

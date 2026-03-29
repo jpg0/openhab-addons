@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="neosmartblinds"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<!-- NeoSmart Blinds Hub (Bridge) -->
+	<bridge-type id="hub">
+		<label>NeoSmart Blinds Hub</label>
+		<description>The NeoSmart Blinds smart controller (bridge).</description>
+
+		<config-description>
+			<parameter name="host" type="text" required="true">
+				<context>network-address</context>
+				<label>Host</label>
+				<description>IP address or hostname of the NeoSmart Blinds controller.</description>
+			</parameter>
+			<parameter name="hubId" type="text" required="true">
+				<label>Hub ID</label>
+				<description>The 24-character device ID of the Smart Blinds Hub (found in the app).</description>
+			</parameter>
+			<parameter name="protocol" type="text" required="true">
+				<label>Protocol</label>
+				<description>The protocol to use for sending commands (http or tcp).</description>
+				<options>
+					<option value="http">HTTP</option>
+					<option value="tcp">TCP</option>
+				</options>
+				<default>http</default>
+			</parameter>
+			<parameter name="port" type="integer" required="true">
+				<label>Port</label>
+				<description>Port to use for the connection (8838 for HTTP, 8839 for TCP).</description>
+				<default>8838</default>
+			</parameter>
+			<parameter name="commandDelay" type="integer" required="false">
+				<label>Command Delay</label>
+				<description>Delay in milliseconds between consecutive commands (prevents the hub from dropping requests).</description>
+				<default>600</default>
+				<advanced>true</advanced>
+			</parameter>
+		</config-description>
+	</bridge-type>
+
+	<!-- NeoSmart Blind (Thing) -->
+	<thing-type id="blind">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="hub"/>
+		</supported-bridge-type-refs>
+
+		<label>NeoSmart Blind</label>
+		<description>An individual NeoSmart blind or room group.</description>
+
+		<channels>
+			<channel id="rollershutter" typeId="rollershutter"/>
+			<channel id="position" typeId="position"/>
+			<channel id="favourite1" typeId="favourite"/>
+			<channel id="favourite2" typeId="favourite"/>
+		</channels>
+
+		<config-description>
+			<parameter name="blindCode" type="text" required="true">
+				<label>Blind Code</label>
+				<description>The blind code (e.g., 021.230-04). Use room code for group control.</description>
+			</parameter>
+			<parameter name="closeTime" type="integer" required="true" unit="s">
+				<label>Close Time</label>
+				<description>Time in seconds to fully close the blind (used for position estimation).</description>
+				<default>30</default>
+			</parameter>
+			<parameter name="motorCode" type="text" required="false">
+				<label>Motor Code</label>
+				<description>Optional motor code (required for some hub models like C-BR300).</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<!-- Channel Types -->
+	<channel-type id="rollershutter">
+		<item-type>Rollershutter</item-type>
+		<label>Blind Control</label>
+		<description>Control the blind (up, down, stop).</description>
+	</channel-type>
+
+	<channel-type id="position">
+		<item-type>Dimmer</item-type>
+		<label>Position</label>
+		<description>Set the position of the blind (0% = open, 100% = closed).</description>
+	</channel-type>
+
+	<channel-type id="favourite">
+		<item-type>Switch</item-type>
+		<label>Favourite Position</label>
+		<description>Trigger a favourite position (ON to trigger).</description>
+	</channel-type>
+</thing:thing-descriptions>

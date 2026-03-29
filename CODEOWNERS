@@ -271,6 +271,7 @@
 /bundles/org.openhab.binding.neato/ @jjlauterbach
 /bundles/org.openhab.binding.neeo/ @morph166955
 /bundles/org.openhab.binding.neohub/ @andrewfg
+/bundles/org.openhab.binding.neosmartblinds/ @jpg
 /bundles/org.openhab.binding.nest/ @wborn
 /bundles/org.openhab.binding.netatmo/ @clinique @lolodomo
 /bundles/org.openhab.binding.network/ @mettke

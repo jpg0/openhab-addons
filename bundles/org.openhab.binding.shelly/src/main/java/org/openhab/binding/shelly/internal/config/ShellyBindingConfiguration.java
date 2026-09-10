@@ -25,8 +25,11 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 
 /**
- * The {@link ShellyBindingConfiguration} maps binding configuration parameters directly from binding.cfg /
- * OSGi properties. This is a plain data class — no IP resolution, no port logic.
+ * The {@link ShellyBindingConfiguration} maps binding configuration parameters directly from
+ * OSGi properties (configuration PID {@code binding.shelly}). This is a plain data class — no IP
+ * resolution, no port logic. It is populated by the OH framework (or via {@code fromProperties}),
+ * and is only used transiently to construct a {@link ShellyBindingRuntimeConfig}.
+ *
  * Use {@link ShellyBindingRuntimeConfig} to obtain a fully resolved runtime snapshot.
  *
  * @author Markus Michels - Initial contribution
@@ -100,8 +103,6 @@ public class ShellyBindingConfiguration {
         Map<String, Object> map = keys.stream().collect(Collectors.toMap(Function.identity(), properties::get));
         return fromProperties(map);
     }
-
-    // ── Getters ──────────────────────────────────────────────────────────────
 
     public String getDefaultUserId() {
         return defaultUserId;

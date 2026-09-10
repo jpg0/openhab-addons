@@ -75,7 +75,7 @@ public class Shelly1CoapHandler implements Shelly1CoapListener {
     private final Gson gson;
     private String thingName;
 
-    private boolean coiotBound = false;
+    private boolean coiotBound;
     private Shelly1CoIoTInterface coiot;
     private int coiotVers = -1;
 
@@ -83,7 +83,7 @@ public class Shelly1CoapHandler implements Shelly1CoapListener {
     private @Nullable CoapClient statusClient;
     private Request reqDescription = new Request(Code.GET, Type.CON);
     private Request reqStatus = new Request(Code.GET, Type.CON);
-    private boolean updatesRequested = false;
+    private boolean updatesRequested;
     private int coiotPort = COIOT_PORT;
 
     private int lastSerial = -1;
@@ -471,8 +471,12 @@ public class Shelly1CoapHandler implements Shelly1CoapListener {
 
         if (!updates.isEmpty()) {
             int updated = 0;
+            boolean sensorGroupUpdated = false;
             for (Map.Entry<String, State> u : updates.entrySet()) {
                 String key = u.getKey();
+                if (key.startsWith(CHANNEL_GROUP_SENSOR + "#")) {
+                    sensorGroupUpdated = true;
+                }
                 updated += thingHandler.updateChannel(key, u.getValue(), false) ? 1 : 0;
             }
             if (updated > 0) {
@@ -481,6 +485,11 @@ public class Shelly1CoapHandler implements Shelly1CoapListener {
                     // CoAP is currently lacking the lastUpdate info, so we use host timestamp
                     thingHandler.updateChannel(profile.getControlGroup(0), CHANNEL_LAST_UPDATE, getTimestamp());
                 }
+            }
+            if (sensorGroupUpdated && !profile.isSensor && !profile.isRoller) {
+                // Relay device with addon sensors: always refresh sensors#lastUpdate so the channel acts
+                // as a heartbeat even when temperature values are unchanged (and thus cache-deduplicated)
+                thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_LAST_UPDATE, getTimestamp());
             }
 
             if (profile.isLight && profile.inColor && col.isRgbValid()) {

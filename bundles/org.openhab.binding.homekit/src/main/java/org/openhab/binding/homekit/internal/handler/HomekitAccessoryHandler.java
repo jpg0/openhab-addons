@@ -47,6 +47,7 @@ import org.openhab.binding.homekit.internal.persistence.HomekitTypeProvider;
 import org.openhab.binding.homekit.internal.transport.IpTransport;
 import org.openhab.core.config.core.Configuration;
 import org.openhab.core.i18n.TranslationProvider;
+import org.openhab.core.io.net.mac.MacResolver;
 import org.openhab.core.library.CoreItemFactory;
 import org.openhab.core.library.types.DateTimeType;
 import org.openhab.core.library.types.DecimalType;
@@ -156,8 +157,9 @@ public class HomekitAccessoryHandler extends HomekitBaseAccessoryHandler {
     public HomekitAccessoryHandler(Thing thing, HomekitTypeProvider typeProvider,
             ChannelTypeRegistry channelTypeRegistry, ChannelGroupTypeRegistry channelGroupTypeRegistry,
             HomekitKeyStore keyStore, TranslationProvider i18nProvider, Bundle bundle,
-            ManagedThingProvider managedThingProvider, HomekitMdnsDiscoveryParticipant discoveryParticipant) {
-        super(thing, typeProvider, keyStore, i18nProvider, bundle, discoveryParticipant);
+            ManagedThingProvider managedThingProvider, HomekitMdnsDiscoveryParticipant discoveryParticipant,
+            MacResolver macResolver) {
+        super(thing, typeProvider, keyStore, i18nProvider, bundle, discoveryParticipant, macResolver);
         this.channelTypeRegistry = channelTypeRegistry;
         this.channelGroupTypeRegistry = channelGroupTypeRegistry;
         this.managedThingProvider = managedThingProvider;
@@ -166,7 +168,7 @@ public class HomekitAccessoryHandler extends HomekitBaseAccessoryHandler {
     /**
      * Converts an openHAB Command to a suitable object for writing to a HomeKit characteristic.
      * It handles various conversions including unit conversion, clamping to min/max values,
-     * and converting specific types like OnOffType and OpenClosedType to boolean.
+     * and converting specific types like OnOffType to boolean.
      *
      * @param command the command to convert
      * @param channel the channel for which the command is being converted
@@ -183,8 +185,6 @@ public class HomekitAccessoryHandler extends HomekitBaseAccessoryHandler {
                 object = new PercentType(100 - percent.intValue());
             } else if (object instanceof OnOffType onOff) {
                 object = onOff == OnOffType.ON ? PercentType.HUNDRED : PercentType.ZERO;
-            } else if (object instanceof OpenClosedType openClosed) {
-                object = openClosed == OpenClosedType.OPEN ? PercentType.HUNDRED : PercentType.ZERO;
             } else if (object instanceof UpDownType upDown) {
                 object = upDown == UpDownType.UP ? PercentType.HUNDRED : PercentType.ZERO;
             }
@@ -249,11 +249,6 @@ public class HomekitAccessoryHandler extends HomekitBaseAccessoryHandler {
         // convert on/off to boolean
         if (object instanceof OnOffType onOff) {
             object = Boolean.valueOf(onOff == OnOffType.ON);
-        }
-
-        // convert open/closed to boolean
-        if (object instanceof OpenClosedType openClosed) {
-            object = Boolean.valueOf(openClosed == OpenClosedType.OPEN);
         }
 
         // convert datetime to string
@@ -1335,7 +1330,8 @@ public class HomekitAccessoryHandler extends HomekitBaseAccessoryHandler {
                     "@text/status.migrating-accessory-to-bridge-failed");
             return;
         }
-        discoveryParticipant.suppressId(uniqueId, true); // suppress re-discovery of existing (now old) thing
+        String mac = thing.getProperties().get(Thing.PROPERTY_MAC_ADDRESS);
+        discoveryParticipant.setTypeMapping(true, uniqueId, mac); // enable mDNS thing type mapping
         logger.info("Successfully auto-migrated {} to {} with {}", oldThing.getUID(), newBridge.getUID(),
                 newThing.getUID());
     }

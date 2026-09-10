@@ -19,10 +19,16 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.core.net.NetworkAddressService;
 
 /**
- * Runtime binding configuration derived from {@link ShellyBindingConfiguration}.
+ * Runtime snapshot derived from {@link ShellyBindingConfiguration} plus
+ * runtime binding configuration derived from {@link ShellyBindingConfiguration}.
+ *
  * Resolves the local IP address (config override wins; falls back to
  * {@link NetworkAddressService}) and carries the HTTP port once the OSGi HTTP
- * service has started. Thread-safe.
+ * service has started.
+ *
+ * Thread-safe (mutable object with synchronized access, updated in-place).
+ * Held as volatile in {@link ShellyHandlerFactory} and {@link ShellyBaseHandler} to
+ * guarantee safe publication after @Modified callbacks.
  *
  * @author Markus Michels - Initial contribution
  */
@@ -92,8 +98,6 @@ public class ShellyBindingRuntimeConfig {
         return result;
     }
 
-    // ── Getters ──────────────────────────────────────────────────────────────
-
     public synchronized String getDefaultUserId() {
         return defaultUserId;
     }
@@ -120,8 +124,6 @@ public class ShellyBindingRuntimeConfig {
         return autoCoIoT;
     }
 
-    // ── Setters ──────────────────────────────────────────────────────────────
-
     /**
      * Sets the HTTP port to use. {@code -1} means "use default".
      *
@@ -130,8 +132,6 @@ public class ShellyBindingRuntimeConfig {
     public synchronized void setHttpPort(int httpPort) {
         this.httpPort = httpPort;
     }
-
-    // ── Private helpers ───────────────────────────────────────────────────────
 
     private static String resolveLocalIP(NetworkAddressService nas) {
         @Nullable
